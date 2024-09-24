@@ -1,98 +1,53 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
-using System.Collections.Generic;
 
-public class FBXAnimationSplitter : EditorWindow
+public class FBXAnimationSplitter : Editor
 {
-    private const int BatchSize = 10; // Process 10 files at a time
-    private static Queue<string> fbxQueue;
-    private static string outputFolder = "ExtractedAnimations";
-
     [MenuItem("Tools/Split Animations")]
-    static void Init()
+    static void SplitAnimations()
     {
-        FBXAnimationSplitter window = (FBXAnimationSplitter)EditorWindow.GetWindow(typeof(FBXAnimationSplitter));
-        window.Show();
-    }
-
-    void OnGUI()
-    {
-        if (GUILayout.Button("Start Splitting Animations"))
-        {
-            StartSplittingAnimations();
-        }
-    }
-
-    static void StartSplittingAnimations()
-    {
+        // Set the directory path where the FBX files are located
         string directoryPath = Path.Combine(Application.dataPath, "Fbx");
 
+        // Check if the directory exists
         if (!Directory.Exists(directoryPath))
         {
             Debug.LogError($"Directory does not exist: {directoryPath}");
             return;
         }
 
+        // Get all FBX files in the directory
         string[] fbxFiles = Directory.GetFiles(directoryPath, "*.fbx");
-        fbxQueue = new Queue<string>(fbxFiles);
 
-        // Ensure output directory exists
-        string outputPath = Path.Combine(Application.dataPath, outputFolder);
-        if (!Directory.Exists(outputPath))
+
+        foreach (string fbxPath in fbxFiles)
         {
-            Directory.CreateDirectory(outputPath);
+        // Convert the full path to a relative path that Unity uses
+            string assetPath = "Assets" + fbxPath.Substring(Application.dataPath.Length);
+            Debug.Log($"Processing: {assetPath}");
+
+            // Load the FBX file as an AnimationClip
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
+            
+            if (clip != null)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(fbxPath).Split(" ")[1];
+                // Use the relative path for the new asset
+                string newAssetPath = $"Assets/ExtractedAnimations/{fileName}.anim";
+
+                AnimationClip newClip = new AnimationClip();
+                EditorUtility.CopySerialized(clip, newClip);
+                AssetDatabase.CreateAsset(newClip, newAssetPath);
+                Debug.Log($"Created new animation: {newAssetPath}");
+            }
+            else
+            {
+                Debug.LogWarning($"No AnimationClip found in: {assetPath}");
+            }
         }
 
-        EditorApplication.update += ProcessBatch;
-    }
-
-    static void ProcessBatch()
-    {
-        int processedInThisBatch = 0;
-
-        while (fbxQueue.Count > 0 && processedInThisBatch < BatchSize)
-        {
-            string fbxPath = fbxQueue.Dequeue();
-            ProcessSingleFile(fbxPath);
-            processedInThisBatch++;
-
-            // Force a garbage collection to free up memory
-            System.GC.Collect();
-        }
-
-        if (fbxQueue.Count == 0)
-        {
-            EditorApplication.update -= ProcessBatch;
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log("All animations have been processed.");
-        }
-    }
-
-    static void ProcessSingleFile(string fbxPath)
-    {
-        string assetPath = "Assets" + fbxPath.Substring(Application.dataPath.Length);
-        Debug.Log($"Processing: {assetPath}");
-
-        AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
-
-        if (clip != null)
-        {
-            string fileName = Path.GetFileNameWithoutExtension(fbxPath).Split(" ")[1];
-            string newAssetPath = $"Assets/{outputFolder}/{fileName}.anim";
-
-            AnimationClip newClip = new AnimationClip();
-            EditorUtility.CopySerialized(clip, newClip);
-            AssetDatabase.CreateAsset(newClip, newAssetPath);
-            Debug.Log($"Created new animation: {newAssetPath}");
-        }
-        else
-        {
-            Debug.LogWarning($"No AnimationClip found in: {assetPath}");
-        }
-
-        // Unload unused assets to free up memory
-        Resources.UnloadUnusedAssets();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 }
