@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using System.IO;
 
 public class FBXAnimationSplitter : Editor
 {
@@ -7,32 +8,46 @@ public class FBXAnimationSplitter : Editor
     static void SplitAnimations()
     {
         // Set the directory path where the FBX files are located
-        string directoryPath = "Assets/fbx";
+        string directoryPath = Path.Combine(Application.dataPath, "Fbx");
 
-        Debug.Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        // Check if the directory exists
+        if (!Directory.Exists(directoryPath))
+        {
+            Debug.LogError($"Directory does not exist: {directoryPath}");
+            return;
+        }
 
         // Get all FBX files in the directory
-        string[] fbxFiles = System.IO.Directory.GetFiles(directoryPath, "*.fbx");
+        string[] fbxFiles = Directory.GetFiles(directoryPath, "*.fbx");
+
 
         foreach (string fbxPath in fbxFiles)
         {
-            // Load the FBX file as a GameObject
-            GameObject fbxAsset = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+        // Convert the full path to a relative path that Unity uses
+            string assetPath = "Assets" + fbxPath.Substring(Application.dataPath.Length);
+            Debug.Log($"Processing: {assetPath}");
 
-            // Get the ModelImporter to access the animation data
-            ModelImporter modelImporter = AssetImporter.GetAtPath(fbxPath) as ModelImporter;
-
-            if (modelImporter != null && modelImporter.clipAnimations.Length > 0)
+            // Load the FBX file as an AnimationClip
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
+            
+            if (clip != null)
             {
-                foreach (var clip in modelImporter.clipAnimations)
-                {
-                    // Modify or extract animation clips here
-                    Debug.Log($"Processing animation {clip.name} from {fbxPath}");
-                }
+                string fileName = Path.GetFileNameWithoutExtension(fbxPath).Split(" ")[1];
+                // Use the relative path for the new asset
+                string newAssetPath = $"Assets/ExtractedAnimations/{fileName}.anim";
 
-                // Optionally, save changes
-                AssetDatabase.ImportAsset(fbxPath);
+                AnimationClip newClip = new AnimationClip();
+                EditorUtility.CopySerialized(clip, newClip);
+                AssetDatabase.CreateAsset(newClip, newAssetPath);
+                Debug.Log($"Created new animation: {newAssetPath}");
+            }
+            else
+            {
+                Debug.LogWarning($"No AnimationClip found in: {assetPath}");
             }
         }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 }
