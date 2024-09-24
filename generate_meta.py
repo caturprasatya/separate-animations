@@ -3,9 +3,10 @@ import os
 
 def collecting_animations(directory):
     data = []
-    
+
     for filename in os.listdir(directory):
-        data.append("<S3_URL>"+filename)
+        if filename.endswith(".anim"):
+            data.append("<S3_URL>"+filename)
     
     return data
 
