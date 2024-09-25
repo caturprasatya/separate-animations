@@ -1,12 +1,18 @@
 import json
 import os
+from dotenv import load_dotenv
 
 def collecting_animations(directory):
     data = []
 
     for filename in os.listdir(directory):
         if filename.endswith(".anim"):
-            data.append("<S3_URL>"+filename)
+            file = {
+                "triggerName": filename,
+                "S3Url": os.environ.get("S3_URL") + filename,
+                "synonim": []
+            }
+            data.append(file)
     
     return data
 
@@ -20,12 +26,15 @@ def save_to_json(data, filename):
 
 
 if __name__ == "__main__":
+    load_dotenv()
     print("Running code")
     meta = {
         "version": "1.0.0",
     }
     filename = "metadata.json"
-    directory = r"<DIRECTORY>"
+    directory = os.environ.get('DIRECTORY')
+
+    print(os.environ.get("S3_URL"))
 
     s3UrlAnimations = collecting_animations(directory)
 
