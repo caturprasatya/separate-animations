@@ -8,7 +8,7 @@ def collecting_animations(directory):
     for filename in os.listdir(directory):
         if filename.endswith(".anim"):
             file = {
-                "triggerName": filename.Split(".")[0],
+                "triggerName": filename.split(".")[0],
                 "S3Url": os.environ.get("S3_URL") + filename,
                 "synonim": []
             }
