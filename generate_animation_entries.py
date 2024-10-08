@@ -34,12 +34,12 @@ def find_word(animation_names, dictionary):
     data = []
 
     for word in dictionary:
-        labels = str(word.get("labels", " ")).split(", ") 
+        labels = [label.lower() for label in str(word.get("labels", " ")).split(", ")]
         for name in animation_names:
             if name in labels:
                 synonim = {
                     "triggerName": name,
-                    "synonims": [label for label in labels.split(", ") if(label != name)]
+                    "synonims": [label for label in labels if(label != name)]
                 }
 
                 data.append(synonim)
