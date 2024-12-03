@@ -43,6 +43,8 @@ def find_word(animation_names, dictionary):
                 }
 
                 data.append(synonim)
+            else:
+                print(name)
 
     return data
 
@@ -54,7 +56,7 @@ if __name__ == "__main__":
         "animationEntries": []
     }
 
-    output_filename = "words.json"
+    output_filename = "words3.json"
     dictionary_filename = "dictionary-words.json"
     directory = os.environ.get("DIRECTORY")
 

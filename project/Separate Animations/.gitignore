@@ -77,3 +77,7 @@ crashlytics-build.properties
 /[Aa]ssets/ExtractedAnimations/*
 
 words.json
+
+/[Aa]ssets/Character/*
+/[Aa]ssets/Dave fbx/*
+/[Aa]ssets/Scenes/Hearme Scene.*
